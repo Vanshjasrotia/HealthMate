@@ -24,7 +24,7 @@ export function createReminderSocket({ onReminder, onStatusChange }) {
   let closedManually = false
 
   const connect = () => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("access_token")
     const wsUrl = token
       ? `ws://127.0.0.1:8001/ws/reminders?token=${token}`
       : null
