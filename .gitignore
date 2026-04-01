@@ -1,1 +1,11 @@
+<<<<<<< HEAD
+=======
+venv/
+ml/venv/
+>>>>>>> 742f9c3d4816ea95248ab3bd7ec835eb1e4587af
 backend/.env
+node_modules/
+__pycache__/
+*.pyc
+*.pkl
+dist/
