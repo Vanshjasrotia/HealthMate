@@ -2,35 +2,59 @@ import { useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
 
-const placeholderExtracted = [
-  { name: 'Glucose', value: '98 mg/dL', normal: true },
-  { name: 'Cholesterol', value: '210 mg/dL', normal: false },
-  { name: 'HbA1c', value: '5.4%', normal: true },
-  { name: 'Creatinine', value: '1.2 mg/dL', normal: true },
-]
+const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export default function ReportAnalyzer() {
   const [file, setFile] = useState(null)
   const [uploaded, setUploaded] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [analysis, setAnalysis] = useState(null)
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0]
     if (selected) {
       setFile(selected)
       setUploaded(false)
+      setError('')
+      setAnalysis(null)
     }
   }
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault()
-    if (file) setUploaded(true)
+    if (!file) return
+
+    setIsLoading(true)
+    setError('')
+    setAnalysis(null)
+    setUploaded(false)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch(`${API_BASE_URL}/report/analyze`, {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.detail || 'Report analysis failed.')
+
+      setAnalysis(data)
+      setUploaded(true)
+    } catch (err) {
+      setError(err.message || 'Could not analyze report.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-bold text-slate-800 mb-2">Report Analyzer</h1>
       <p className="text-slate-600 mb-8">
-        Upload a lab report (PDF or image) to see extracted values. This is a UI placeholder.
+        Upload a lab report (PDF, image, or text) to extract values and highlight abnormalities.
       </p>
 
       <Card className="mb-8">
@@ -39,7 +63,7 @@ export default function ReportAnalyzer() {
             <label className="block text-sm font-medium text-slate-700 mb-2">Select file (PDF / Image)</label>
             <input
               type="file"
-              accept=".pdf,image/*"
+              accept=".pdf,image/*,.txt"
               onChange={handleFileChange}
               className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-medical-100 file:text-medical-800 file:font-medium hover:file:bg-medical-200"
             />
@@ -47,9 +71,10 @@ export default function ReportAnalyzer() {
               <p className="mt-2 text-sm text-slate-500">Selected: {file.name}</p>
             )}
           </div>
-          <Button type="submit" disabled={!file}>
-            Upload & Analyze
+          <Button type="submit" disabled={!file || isLoading}>
+            {isLoading ? 'Analyzing...' : 'Upload & Analyze'}
           </Button>
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </form>
       </Card>
 
@@ -64,10 +89,11 @@ export default function ReportAnalyzer() {
                     <th className="text-left py-2 font-medium text-slate-700">Parameter</th>
                     <th className="text-left py-2 font-medium text-slate-700">Value</th>
                     <th className="text-left py-2 font-medium text-slate-700">Status</th>
+                    <th className="text-left py-2 font-medium text-slate-700">Note</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {placeholderExtracted.map((row) => (
+                  {(analysis?.extracted_values || []).map((row) => (
                     <tr key={row.name} className="border-b border-slate-100">
                       <td className="py-2 text-slate-800">{row.name}</td>
                       <td className="py-2 text-slate-700">{row.value}</td>
@@ -76,16 +102,40 @@ export default function ReportAnalyzer() {
                           {row.normal ? 'Normal' : 'Abnormal'}
                         </span>
                       </td>
+                      <td className="py-2 text-xs text-slate-500">{row.note || '-'}</td>
                     </tr>
                   ))}
+                  {(analysis?.extracted_values || []).length === 0 && (
+                    <tr>
+                      <td className="py-2 text-slate-500" colSpan={4}>No values could be extracted from this file.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </Card>
+          <Card>
+            <h3 className="font-semibold text-slate-800 mb-3">AI Summary</h3>
+            <p className="text-sm text-slate-700">{analysis?.summary}</p>
+          </Card>
           <Card className="bg-amber-50 border-amber-200">
             <h3 className="font-semibold text-amber-900 mb-3">Highlighted Abnormal Parameters</h3>
             <ul className="space-y-1 text-sm text-amber-800">
-              <li>• Cholesterol: 210 mg/dL (above normal range)</li>
+              {(analysis?.abnormal_parameters || []).map((item, idx) => (
+                <li key={`${item}-${idx}`}>• {item}</li>
+              ))}
+              {(analysis?.abnormal_parameters || []).length === 0 && <li>• No clearly abnormal parameter detected.</li>}
+            </ul>
+          </Card>
+          <Card className="bg-emerald-50 border-emerald-200">
+            <h3 className="font-semibold text-emerald-900 mb-3">Suggested Remedies</h3>
+            <ul className="space-y-1 text-sm text-emerald-800">
+              {(analysis?.remedies || []).map((item, idx) => (
+                <li key={`${item}-${idx}`}>• {item}</li>
+              ))}
+              {(analysis?.remedies || []).length === 0 && (
+                <li>• Maintain balanced nutrition, hydration, and regular checkups.</li>
+              )}
             </ul>
           </Card>
         </div>
@@ -97,7 +147,7 @@ export default function ReportAnalyzer() {
             <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="text-sm">Upload a file to see placeholder extracted values</p>
+            <p className="text-sm">Upload a file to run AI report analysis</p>
           </div>
         </Card>
       )}

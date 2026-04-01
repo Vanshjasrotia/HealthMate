@@ -2,12 +2,20 @@ from typing import Optional
 
 import google.generativeai as genai
 
-from config import get_gemini_api_key
-from filters import (
-    is_emergency_query,
-    NON_MEDICAL_RESPONSE,
-    EMERGENCY_RESPONSE,
-)
+try:
+    from .config import get_gemini_api_key
+    from .filters import (
+        is_emergency_query,
+        NON_MEDICAL_RESPONSE,
+        EMERGENCY_RESPONSE,
+    )
+except ImportError:
+    from config import get_gemini_api_key
+    from filters import (
+        is_emergency_query,
+        NON_MEDICAL_RESPONSE,
+        EMERGENCY_RESPONSE,
+    )
 
 
 CLASSIFY_PROMPT = """You are a classifier. The user will send a message. Decide if it is a medical or health-related question (including symptoms, conditions, medicines, body, mental health, diet, pregnancy, etc.). Reply with exactly one word: MEDICAL or NON_MEDICAL. Do not add any other text, explanation, or punctuation."""

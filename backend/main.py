@@ -1,20 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
-from chatbot import generate_chat_reply
+try:
+    from .routes import chat_router, prediction_router, report_router
+except ImportError:
+    from routes import chat_router, prediction_router, report_router
 
-
-class ChatRequest(BaseModel):
-    message: str
-
-
-class ChatResponse(BaseModel):
-    reply: str
-
-
-app = FastAPI(title="HealthMate Chatbot API")
-
+app = FastAPI(title="HealthMate API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,10 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
-    reply = generate_chat_reply(payload.message)
-    return ChatResponse(reply=reply)
+app.include_router(chat_router)
+app.include_router(prediction_router)
+app.include_router(report_router)
 
 
