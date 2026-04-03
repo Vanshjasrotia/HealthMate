@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from models import Reminder
+from orm_models import Reminder
 from reminder_events import trigger_reminder_event
 from reminder_ws import push_reminder_notification
 

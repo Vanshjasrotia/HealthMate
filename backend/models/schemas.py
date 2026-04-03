@@ -3,10 +3,33 @@ from pydantic import BaseModel, Field
 
 class ChatRequest(BaseModel):
     message: str
+    conversation_id: int | None = None
 
 
 class ChatResponse(BaseModel):
     reply: str
+    conversation_id: int | None = None
+
+
+class ChatHistoryItem(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: str
+
+
+class ChatHistoryResponse(BaseModel):
+    messages: list[ChatHistoryItem]
+
+
+class ChatConversationOut(BaseModel):
+    id: int
+    preview: str
+    updated_at: str
+
+
+class ChatConversationsResponse(BaseModel):
+    conversations: list[ChatConversationOut]
 
 
 class PredictionResponse(BaseModel):

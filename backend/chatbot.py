@@ -33,6 +33,14 @@ Rules:
 
 MODEL_NAME = "gemini-2.5-flash"
 
+HEALTH_TIPS_PROMPT = """You write brief wellness tips for a general health app dashboard.
+
+Output EXACTLY 3 tips, one tip per line (3 lines total).
+Each tip: one short sentence, under 100 characters if possible, plain language.
+Focus on: hydration, movement, sleep, balanced meals, stress balance, or healthy habits.
+General wellness only. Do NOT diagnose. Do NOT prescribe medications. Do not address specific diseases.
+No numbering, no bullets, no markdown symbols — plain text only, one sentence per line."""
+
 
 _model: Optional[genai.GenerativeModel] = None
 
@@ -84,4 +92,29 @@ def generate_chat_reply(message: str) -> str:
             "Please try again later and consult a qualified doctor for medical advice."
         )
     return reply
+
+
+def generate_dashboard_health_tips() -> list[str]:
+    """Return exactly 3 wellness tips from Gemini for the dashboard."""
+    model = _get_model()
+    response = model.generate_content(HEALTH_TIPS_PROMPT)
+    text = getattr(response, "text", None) or str(response)
+    lines: list[str] = []
+    for raw in text.splitlines():
+        t = raw.strip()
+        if not t:
+            continue
+        t = t.lstrip("0123456789.-•*·\t) ").strip()
+        if t.startswith(("-", "*")):
+            t = t[1:].strip()
+        if t:
+            lines.append(t[:220])
+    fillers = [
+        "Drink water regularly through the day.",
+        "Take short walking breaks if you sit for long periods.",
+        "Prioritize consistent sleep when you can.",
+    ]
+    while len(lines) < 3:
+        lines.append(fillers[len(lines) % len(fillers)])
+    return lines[:3]
 

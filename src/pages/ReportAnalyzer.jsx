@@ -1,15 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import { getBearerAuthHeaders } from '../features/auth/authHeaders'
+import { useAuthModal, isLoggedIn } from '../contexts/AuthModalContext'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
+const LOGIN_PROMPT_MS = 5 * 60 * 1000
 
 export default function ReportAnalyzer() {
+  const { openAuthModal } = useAuthModal()
+  const loginPromptTimeoutRef = useRef(null)
   const [file, setFile] = useState(null)
   const [uploaded, setUploaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [analysis, setAnalysis] = useState(null)
+
+  useEffect(() => {
+    return () => {
+      if (loginPromptTimeoutRef.current) {
+        clearTimeout(loginPromptTimeoutRef.current)
+        loginPromptTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0]
@@ -36,6 +50,7 @@ export default function ReportAnalyzer() {
 
       const res = await fetch(`${API_BASE_URL}/report/analyze`, {
         method: 'POST',
+        headers: getBearerAuthHeaders(),
         body: formData,
       })
       const data = await res.json()
@@ -43,6 +58,15 @@ export default function ReportAnalyzer() {
 
       setAnalysis(data)
       setUploaded(true)
+      if (!isLoggedIn()) {
+        if (loginPromptTimeoutRef.current) {
+          clearTimeout(loginPromptTimeoutRef.current)
+        }
+        loginPromptTimeoutRef.current = setTimeout(() => {
+          loginPromptTimeoutRef.current = null
+          openAuthModal('login')
+        }, LOGIN_PROMPT_MS)
+      }
     } catch (err) {
       setError(err.message || 'Could not analyze report.')
     } finally {

@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class SignupRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
+    age: int = Field(ge=1, le=120)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
 
@@ -17,6 +18,7 @@ class LoginRequest(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
+    age: int | None = None
     email: EmailStr
 
     class Config:
@@ -48,3 +50,23 @@ class ReminderOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RecentPredictionItem(BaseModel):
+    disease: str
+    result: str
+    probability: str
+    date: str
+
+
+class DashboardResponse(BaseModel):
+    total_predictions: int
+    last_prediction: str
+    reports_uploaded: int
+    active_reminders: int
+    recent_predictions: list[RecentPredictionItem]
+    health_tips: list[str]
+
+
+class HealthTipsResponse(BaseModel):
+    health_tips: list[str]

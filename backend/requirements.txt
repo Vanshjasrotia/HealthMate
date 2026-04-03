@@ -3,4 +3,9 @@ uvicorn[standard]
 python-dotenv
 google-generativeai
 pydantic
+pydantic[email]
+email-validator
 python-multipart
+sqlalchemy
+bcrypt
+python-jose[cryptography]

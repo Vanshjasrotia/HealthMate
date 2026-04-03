@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
 try:
+    from ..auth_dependencies import get_optional_user_id
+    from ..database import get_db
     from ..models.schemas import (
         DiabetesRequest,
         HeartRequest,
@@ -12,9 +15,12 @@ try:
         LiverRequest,
         PredictionResponse,
     )
+    from ..services.activity_log import log_prediction
     from ..utils.model_loader import load_artifact
     from ..utils.preprocessing import preprocess_input
 except ImportError:
+    from auth_dependencies import get_optional_user_id
+    from database import get_db
     from models.schemas import (
         DiabetesRequest,
         HeartRequest,
@@ -22,6 +28,7 @@ except ImportError:
         LiverRequest,
         PredictionResponse,
     )
+    from services.activity_log import log_prediction
     from utils.model_loader import load_artifact
     from utils.preprocessing import preprocess_input
 
@@ -41,7 +48,6 @@ def _make_response(prediction_class: int, probability: float) -> PredictionRespo
         prediction_label = "Low Risk"
         message = "The risk appears lower, but regular checkups are recommended."
 
-    # Preserve model class output for possible downstream logic/logging.
     _ = prediction_class
 
     return PredictionResponse(
@@ -66,20 +72,44 @@ def _predict(model_filename: str, payload_dict: Dict[str, Any]) -> PredictionRes
 
 
 @router.post("/diabetes", response_model=PredictionResponse)
-async def predict_diabetes(payload: DiabetesRequest) -> PredictionResponse:
-    return _predict("diabetes_model.pkl", payload.model_dump())
+async def predict_diabetes(
+    request: Request,
+    payload: DiabetesRequest,
+    db: Session = Depends(get_db),
+) -> PredictionResponse:
+    resp = _predict("diabetes_model.pkl", payload.model_dump())
+    log_prediction(db, get_optional_user_id(request), "Diabetes", resp.prediction, resp.probability)
+    return resp
 
 
 @router.post("/heart", response_model=PredictionResponse)
-async def predict_heart(payload: HeartRequest) -> PredictionResponse:
-    return _predict("heart_model.pkl", payload.model_dump())
+async def predict_heart(
+    request: Request,
+    payload: HeartRequest,
+    db: Session = Depends(get_db),
+) -> PredictionResponse:
+    resp = _predict("heart_model.pkl", payload.model_dump())
+    log_prediction(db, get_optional_user_id(request), "Heart", resp.prediction, resp.probability)
+    return resp
 
 
 @router.post("/liver", response_model=PredictionResponse)
-async def predict_liver(payload: LiverRequest) -> PredictionResponse:
-    return _predict("liver_model.pkl", payload.model_dump())
+async def predict_liver(
+    request: Request,
+    payload: LiverRequest,
+    db: Session = Depends(get_db),
+) -> PredictionResponse:
+    resp = _predict("liver_model.pkl", payload.model_dump())
+    log_prediction(db, get_optional_user_id(request), "Liver", resp.prediction, resp.probability)
+    return resp
 
 
 @router.post("/kidney", response_model=PredictionResponse)
-async def predict_kidney(payload: KidneyRequest) -> PredictionResponse:
-    return _predict("kidney_model.pkl", payload.model_dump())
+async def predict_kidney(
+    request: Request,
+    payload: KidneyRequest,
+    db: Session = Depends(get_db),
+) -> PredictionResponse:
+    resp = _predict("kidney_model.pkl", payload.model_dump())
+    log_prediction(db, get_optional_user_id(request), "Kidney", resp.prediction, resp.probability)
+    return resp

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from auth_dependencies import get_authenticated_user_id
 from database import get_db
-from models import Reminder
+from orm_models import Reminder
 from schemas import ReminderCreateRequest, ReminderOut
 
 

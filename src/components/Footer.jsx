@@ -25,9 +25,6 @@ export default function Footer() {
               <li>
                 <Link to="/chatbot" className="text-sm text-slate-600 hover:text-medical-600">Medical Chatbot</Link>
               </li>
-              <li>
-                <Link to="/dashboard" className="text-sm text-slate-600 hover:text-medical-600">Dashboard</Link>
-              </li>
             </ul>
           </div>
           <div>

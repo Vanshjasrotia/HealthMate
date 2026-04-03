@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import { getJsonAuthHeaders } from '../features/auth/authHeaders'
+import { useAuthModal, isLoggedIn } from '../contexts/AuthModalContext'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
@@ -52,7 +54,11 @@ const initialForm = {
   Albumin: '',
 }
 
+const LOGIN_PROMPT_MS = 5 * 60 * 1000
+
 export default function DiseasePrediction() {
+  const { openAuthModal } = useAuthModal()
+  const loginPromptTimeoutRef = useRef(null)
   const [selectedDisease, setSelectedDisease] = useState('diabetes')
   const [formData, setFormData] = useState(initialForm)
   const [result, setResult] = useState(null)
@@ -60,6 +66,15 @@ export default function DiseasePrediction() {
   const [isLoading, setIsLoading] = useState(false)
 
   const config = useMemo(() => diseaseConfig[selectedDisease], [selectedDisease])
+
+  useEffect(() => {
+    return () => {
+      if (loginPromptTimeoutRef.current) {
+        clearTimeout(loginPromptTimeoutRef.current)
+        loginPromptTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -104,7 +119,7 @@ export default function DiseasePrediction() {
     try {
       const res = await fetch(`${API_BASE_URL}${config.endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getJsonAuthHeaders(),
         body: JSON.stringify(payload),
       })
 
@@ -115,6 +130,15 @@ export default function DiseasePrediction() {
 
       const data = await res.json()
       setResult(data)
+      if (!isLoggedIn()) {
+        if (loginPromptTimeoutRef.current) {
+          clearTimeout(loginPromptTimeoutRef.current)
+        }
+        loginPromptTimeoutRef.current = setTimeout(() => {
+          loginPromptTimeoutRef.current = null
+          openAuthModal('login')
+        }, LOGIN_PROMPT_MS)
+      }
     } catch (err) {
       setError(err.message || 'Could not fetch prediction.')
     } finally {
