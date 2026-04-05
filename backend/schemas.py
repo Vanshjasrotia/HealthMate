@@ -33,8 +33,9 @@ class AuthResponse(BaseModel):
 
 class ReminderCreateRequest(BaseModel):
     medicine_name: str = Field(min_length=1, max_length=255)
+    dosage: str | None = Field(default=None, max_length=100)
     time: time
-    frequency: str = Field(min_length=1, max_length=50)
+    frequency: str = Field(min_length=1, max_length=80)
     start_date: date
     end_date: date
 
@@ -43,6 +44,7 @@ class ReminderOut(BaseModel):
     id: int
     user_id: int
     medicine_name: str
+    dosage: str | None = None
     time: time
     frequency: str
     start_date: date

@@ -109,6 +109,19 @@ def _ensure_user_health_tips_column() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN health_tips_json TEXT"))
 
 
+def _ensure_reminder_dosage_and_frequency() -> None:
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if "reminders" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("reminders")}
+    with engine.begin() as conn:
+        if "dosage" not in cols:
+            conn.execute(text("ALTER TABLE reminders ADD COLUMN dosage VARCHAR(100)"))
+    # Widen frequency column if still VARCHAR(50) — SQLite ignores length; no-op for width.
+
+
 def init_db() -> None:
     """Create database tables if they do not exist (SQLite)."""
     import orm_models  # noqa: F401 — register models on metadata
@@ -116,4 +129,5 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_user_age_column()
     _ensure_user_health_tips_column()
+    _ensure_reminder_dosage_and_frequency()
     _ensure_chat_conversation_columns()

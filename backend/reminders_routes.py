@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from auth_dependencies import get_authenticated_user_id
-from database import get_db
-from orm_models import Reminder
-from schemas import ReminderCreateRequest, ReminderOut
+try:
+    from .auth_dependencies import get_authenticated_user_id
+    from .database import get_db
+    from .orm_models import Reminder
+    from .schemas import ReminderCreateRequest, ReminderOut
+except ImportError:
+    from auth_dependencies import get_authenticated_user_id
+    from database import get_db
+    from orm_models import Reminder
+    from schemas import ReminderCreateRequest, ReminderOut
 
 
 router = APIRouter(tags=["reminders"])
@@ -23,9 +29,11 @@ def create_reminder(
             detail="end_date must be greater than or equal to start_date.",
         )
 
+    d = payload.dosage.strip() if payload.dosage else None
     reminder = Reminder(
         user_id=user_id,
         medicine_name=payload.medicine_name.strip(),
+        dosage=d or None,
         time=payload.time,
         frequency=payload.frequency.strip(),
         start_date=payload.start_date,

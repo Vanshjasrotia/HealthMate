@@ -63,8 +63,9 @@ class Reminder(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
     medicine_name = Column(String(255), nullable=False)
+    dosage = Column(String(100), nullable=True)
     time = Column(Time, nullable=False)
-    frequency = Column(String(50), nullable=False)
+    frequency = Column(String(80), nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
 
