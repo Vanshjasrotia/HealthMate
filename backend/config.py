@@ -24,6 +24,12 @@ def _parse_csv(value: str, *, default: list[str]) -> list[str]:
 def _resolve_database_url(raw_value: str | None) -> str:
     value = (raw_value or "").strip() or "sqlite:///./backend/healthmate.db"
 
+    if value.startswith("postgres://"):
+        return "postgresql+psycopg://" + value.removeprefix("postgres://")
+
+    if value.startswith("postgresql://") and not value.startswith("postgresql+psycopg://"):
+        return "postgresql+psycopg://" + value.removeprefix("postgresql://")
+
     if not value.startswith("sqlite:///"):
         return value
 
