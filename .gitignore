@@ -10,6 +10,8 @@ __pycache__/
 *.sqlite3
 *.log
 *.pkl
+!ml/models/
+!ml/models/*.pkl
 .env
 backend/.env
 backend/.pytest_cache/
