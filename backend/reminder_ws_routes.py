@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 
-from reminder_ws import connect_user, disconnect_user
-from security import decode_access_token
+from .reminder_ws import connect_user, disconnect_user
+from .security import decode_access_token
 
 
 router = APIRouter(tags=["reminder-ws"])
@@ -24,7 +26,6 @@ async def reminders_websocket(websocket: WebSocket):
 
     try:
         while True:
-            # Keep the connection alive and allow optional client ping messages.
             await websocket.receive_text()
     except WebSocketDisconnect:
         disconnect_user(user_id, websocket)

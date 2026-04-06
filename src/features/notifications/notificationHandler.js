@@ -1,3 +1,4 @@
+import { getReminderWebSocketUrl } from '../../config/api'
 import { playReminderSound } from './soundAlert'
 
 export function showBrowserNotification(title, body) {
@@ -24,10 +25,8 @@ export function createReminderSocket({ onReminder, onStatusChange }) {
   let closedManually = false
 
   const connect = () => {
-    const token = localStorage.getItem("access_token")
-    const wsUrl = token
-      ? `ws://127.0.0.1:8001/ws/reminders?token=${token}`
-      : null
+    const token = localStorage.getItem('access_token')
+    const wsUrl = getReminderWebSocketUrl(token)
 
     if (!wsUrl) {
       onStatusChange?.('no-token')
@@ -39,45 +38,41 @@ export function createReminderSocket({ onReminder, onStatusChange }) {
       }
       return
     }
-    console.log('Connecting to WebSocket:', wsUrl)
+
     onStatusChange?.('connecting')
     if (socket && socket.readyState <= WebSocket.OPEN) {
       return
     }
+
     socket = new WebSocket(wsUrl)
 
     socket.onopen = () => {
-      console.log('WebSocket connected')
       onStatusChange?.('connected')
     }
 
     socket.onmessage = async (event) => {
       try {
         const payload = JSON.parse(event.data)
-        console.log(payload)
         if (payload?.type !== 'reminder_due') return
 
         const message = payload.message || `Time to take ${payload.medicine_name || 'your medicine'}`
         onReminder?.(payload, message)
 
-        console.log('Notification triggered:', message)
         showBrowserNotification('Medication Reminder', message)
         if (!window.__alarmPlaying) {
           window.__alarmPlaying = true
-          console.log('Playing alarm')
           await playReminderSound()
         }
-      } catch (error) {
+      } catch {
         // Ignore malformed message payloads to keep socket alive.
       }
     }
 
-    socket.onerror = (err) => {
-      console.error('WebSocket error:', err)
+    socket.onerror = () => {
+      onStatusChange?.('error')
     }
 
     socket.onclose = () => {
-      console.log('WebSocket disconnected')
       onStatusChange?.('disconnected')
       if (!closedManually) {
         if (reconnectTimer) {
@@ -102,4 +97,3 @@ export function createReminderSocket({ onReminder, onStatusChange }) {
     },
   }
 }
-

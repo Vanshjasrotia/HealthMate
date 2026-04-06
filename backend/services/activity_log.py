@@ -1,8 +1,10 @@
 """Persist optional activity when a JWT-authenticated user runs predictions or uploads reports."""
 
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 
-from orm_models import Prediction, Report
+from ..orm_models import Prediction, Report
 
 
 def log_prediction(

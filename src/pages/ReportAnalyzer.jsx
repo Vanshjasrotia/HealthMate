@@ -3,8 +3,7 @@ import Card from '../components/Card'
 import Button from '../components/Button'
 import { getBearerAuthHeaders } from '../features/auth/authHeaders'
 import { useAuthModal, isLoggedIn } from '../contexts/AuthModalContext'
-
-const API_BASE_URL = 'http://127.0.0.1:8000'
+import { API_BASE_URL } from '../config/api'
 const LOGIN_PROMPT_MS = 5 * 60 * 1000
 
 export default function ReportAnalyzer() {

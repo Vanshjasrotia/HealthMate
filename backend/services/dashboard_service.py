@@ -1,5 +1,7 @@
 """Aggregate dashboard metrics for the authenticated user."""
 
+from __future__ import annotations
+
 import json
 import random
 from datetime import date
@@ -7,21 +9,20 @@ from datetime import date
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from orm_models import Prediction, Reminder, Report, User
+from ..orm_models import Prediction, Reminder, Report, User
 
-# Pool for GET /dashboard — exactly 3 tips are chosen at random on each request.
+
 HEALTH_TIP_POOL = [
     "Drink enough water",
     "Exercise regularly",
     "Maintain balanced diet",
-    "Sleep at least 7–8 hours",
+    "Sleep at least 7-8 hours",
     "Avoid excessive sugar",
     "Stay physically active",
 ]
 
 
 def _random_health_tips() -> list[str]:
-    """Return 3 distinct tips; order and selection change per request."""
     return random.sample(HEALTH_TIP_POOL, k=3)
 
 
@@ -41,15 +42,15 @@ def _stored_health_tips_for_user(db: Session, user_id: int) -> list[str] | None:
 
 
 def refresh_user_health_tips_from_ai(db: Session, user_id: int) -> list[str]:
-    """Generate tips via Gemini, save to user row; on failure use random pool."""
     try:
-        from chatbot import generate_dashboard_health_tips
+        from ..chatbot import generate_dashboard_health_tips
 
         tips = generate_dashboard_health_tips()
-    except Exception as e:
-        print("Dashboard health tips AI error:", repr(e))
+    except Exception as exc:
+        print("Dashboard health tips AI error:", repr(exc))
         tips = _random_health_tips()
-    tips = [t.strip() for t in tips if t and str(t).strip()][:3]
+
+    tips = [tip.strip() for tip in tips if tip and str(tip).strip()][:3]
     while len(tips) < 3:
         tips.append(_random_health_tips()[0])
     tips = tips[:3]
@@ -94,12 +95,12 @@ def build_dashboard(db: Session, user_id: int) -> dict:
     )
     recent_predictions = [
         {
-            "disease": r.disease,
-            "result": r.result,
-            "probability": r.probability,
-            "date": r.created_at.date().isoformat() if r.created_at else "",
+            "disease": row.disease,
+            "result": row.result,
+            "probability": row.probability,
+            "date": row.created_at.date().isoformat() if row.created_at else "",
         }
-        for r in recent_rows
+        for row in recent_rows
     ]
 
     stored = _stored_health_tips_for_user(db, user_id)

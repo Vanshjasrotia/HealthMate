@@ -1,11 +1,13 @@
-"""SQLAlchemy ORM models (separate name from `models/` package which holds Pydantic schemas)."""
+"""SQLAlchemy ORM models for HealthMate persistence."""
+
+from __future__ import annotations
 
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.orm import relationship
 
-from database import Base
+from .database import Base
 
 
 class User(Base):
@@ -17,17 +19,18 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     health_tips_json = Column(Text, nullable=True)
+
     reminders = relationship("Reminder", back_populates="user", cascade="all, delete-orphan")
     predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")
     reports = relationship("Report", back_populates="user", cascade="all, delete-orphan")
     chat_conversations = relationship(
-        "ChatConversation", back_populates="user", cascade="all, delete-orphan"
+        "ChatConversation",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
 
 class ChatConversation(Base):
-    """One chat thread per user (sidebar item)."""
-
     __tablename__ = "chat_conversations"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -37,20 +40,16 @@ class ChatConversation(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="chat_conversations")
-    messages = relationship(
-        "ChatMessage", back_populates="conversation", cascade="all, delete-orphan"
-    )
+    messages = relationship("ChatMessage", back_populates="conversation", cascade="all, delete-orphan")
 
 
 class ChatMessage(Base):
-    """Persisted chat turn for authenticated users."""
-
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     conversation_id = Column(Integer, ForeignKey("chat_conversations.id"), index=True, nullable=True)
-    role = Column(String(20), nullable=False)  # "user" | "assistant"
+    role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
@@ -73,8 +72,6 @@ class Reminder(Base):
 
 
 class Prediction(Base):
-    """Logged disease prediction when user is authenticated (optional)."""
-
     __tablename__ = "predictions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -88,8 +85,6 @@ class Prediction(Base):
 
 
 class Report(Base):
-    """Logged report analysis upload when user is authenticated (optional)."""
-
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True, index=True)

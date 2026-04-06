@@ -3,8 +3,7 @@ import Card from '../components/Card'
 import Button from '../components/Button'
 import { getJsonAuthHeaders } from '../features/auth/authHeaders'
 import { useAuthModal, isLoggedIn } from '../contexts/AuthModalContext'
-
-const API_BASE_URL = 'http://127.0.0.1:8000'
+import { API_BASE_URL } from '../config/api'
 
 const diseaseConfig = {
   diabetes: {

@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+import { API_BASE_URL } from '../../config/api'
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || ''

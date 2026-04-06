@@ -1,11 +1,17 @@
-<<<<<<< HEAD
-=======
+node_modules/
+dist/
 venv/
 ml/venv/
->>>>>>> 742f9c3d4816ea95248ab3bd7ec835eb1e4587af
-backend/.env
-node_modules/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
 *.pkl
-dist/
+.env
+backend/.env
+backend/.pytest_cache/
+backend/.mypy_cache/
+coverage/

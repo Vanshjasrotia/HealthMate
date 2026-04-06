@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
-import os
 
 import bcrypt
 from jose import JWTError, jwt
 
+from .config import get_settings
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-in-production")
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+
+settings = get_settings()
 
 
 def hash_password(password: str) -> str:
@@ -19,13 +20,13 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_access_token(user_id: int, email: str) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRE_MINUTES)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
     payload = {"sub": str(user_id), "email": email, "exp": expires_at}
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def decode_access_token(token: str):
     try:
-        return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except JWTError:
         return None

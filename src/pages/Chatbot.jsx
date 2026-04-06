@@ -4,10 +4,9 @@ import Card from '../components/Card'
 import Button from '../components/Button'
 import { isLoggedIn } from '../contexts/AuthModalContext'
 import { getJsonAuthHeaders } from '../features/auth/authHeaders'
+import { API_BASE_URL } from '../config/api'
 
 const CHAT_PREVIEW_KEY = 'healthmate_chat_preview'
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
 
 const initialMessages = [
   { id: 1, text: 'Hello! I can provide general medical information. How can I help you today?', isBot: true },

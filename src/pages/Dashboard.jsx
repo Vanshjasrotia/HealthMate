@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import { useAuthModal } from '../contexts/AuthModalContext'
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+import { API_BASE_URL } from '../config/api'
 
 function formatApiDetail(detail) {
   if (detail == null) return 'Could not load dashboard.'

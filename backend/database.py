@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from .config import get_settings
 
-DATABASE_URL = "sqlite:///./healthmate.db"
 
+settings = get_settings()
 
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    settings.database_url,
+    connect_args={"check_same_thread": False} if settings.database_url.startswith("sqlite") else {},
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -22,10 +25,11 @@ def get_db():
 
 
 def _ensure_chat_conversation_columns() -> None:
-    """Add chat_threads schema to existing SQLite DBs; backfill legacy flat messages."""
+    """Add chat thread schema to existing SQLite DBs and backfill legacy flat messages."""
     from sqlalchemy import inspect, text
-    import orm_models  # noqa: F401
-    from orm_models import ChatConversation, ChatMessage
+
+    from . import orm_models  # noqa: F401
+    from .orm_models import ChatConversation, ChatMessage
 
     insp = inspect(engine)
     if "chat_messages" not in insp.get_table_names():
@@ -43,9 +47,7 @@ def _ensure_chat_conversation_columns() -> None:
 
     session = SessionLocal()
     try:
-        orphan = (
-            session.query(ChatMessage).filter(ChatMessage.conversation_id.is_(None)).first()
-        )
+        orphan = session.query(ChatMessage).filter(ChatMessage.conversation_id.is_(None)).first()
         if not orphan:
             return
 
@@ -73,10 +75,10 @@ def _ensure_chat_conversation_columns() -> None:
             )
             session.add(conv)
             session.flush()
-            for m in msgs:
-                m.conversation_id = conv.id
-                if m.user_id is None:
-                    m.user_id = uid
+            for msg in msgs:
+                msg.conversation_id = conv.id
+                if msg.user_id is None:
+                    msg.user_id = uid
         session.commit()
     except Exception:
         session.rollback()
@@ -91,6 +93,7 @@ def _ensure_user_age_column() -> None:
     insp = inspect(engine)
     if "users" not in insp.get_table_names():
         return
+
     cols = {c["name"] for c in insp.get_columns("users")}
     if "age" not in cols:
         with engine.begin() as conn:
@@ -103,6 +106,7 @@ def _ensure_user_health_tips_column() -> None:
     insp = inspect(engine)
     if "users" not in insp.get_table_names():
         return
+
     cols = {c["name"] for c in insp.get_columns("users")}
     if "health_tips_json" not in cols:
         with engine.begin() as conn:
@@ -115,16 +119,16 @@ def _ensure_reminder_dosage_and_frequency() -> None:
     insp = inspect(engine)
     if "reminders" not in insp.get_table_names():
         return
+
     cols = {c["name"] for c in insp.get_columns("reminders")}
     with engine.begin() as conn:
         if "dosage" not in cols:
             conn.execute(text("ALTER TABLE reminders ADD COLUMN dosage VARCHAR(100)"))
-    # Widen frequency column if still VARCHAR(50) — SQLite ignores length; no-op for width.
 
 
 def init_db() -> None:
-    """Create database tables if they do not exist (SQLite)."""
-    import orm_models  # noqa: F401 — register models on metadata
+    """Create database tables if they do not exist and apply lightweight SQLite migrations."""
+    from . import orm_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _ensure_user_age_column()

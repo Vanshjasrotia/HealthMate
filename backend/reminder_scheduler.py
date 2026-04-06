@@ -1,33 +1,40 @@
+from __future__ import annotations
+
 from datetime import datetime
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from sqlalchemy.orm import Session
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+except ModuleNotFoundError:
+    BackgroundScheduler = None
 
-from database import SessionLocal
-from orm_models import Reminder
-from reminder_events import trigger_reminder_event
-from reminder_ws import push_reminder_notification
+from .database import SessionLocal
+from .orm_models import Reminder
+from .reminder_events import trigger_reminder_event
+from .reminder_ws import push_reminder_notification
 
 
-_scheduler = BackgroundScheduler()
+_scheduler = BackgroundScheduler() if BackgroundScheduler is not None else None
 _trigger_guard: set[str] = set()
 
 
 def _is_frequency_match(frequency: str, now: datetime) -> bool:
     value = (frequency or "").strip().lower()
-    if value in {"", "daily", "everyday"}:
+    if value in {"", "daily", "everyday", "once daily", "twice daily", "three times daily"}:
         return True
+    if value == "weekly":
+        return now.weekday() == 0
+    if value == "every other day":
+        return now.toordinal() % 2 == 0
     if value == "weekdays":
         return now.weekday() < 5
     if value == "weekends":
         return now.weekday() >= 5
-    if value == "once":
+    if value in {"once", "as needed"}:
         return True
-    # Unknown values are treated as daily for backward compatibility.
     return True
 
 
-def fetch_due_reminders(db: Session, now: datetime | None = None) -> list[Reminder]:
+def fetch_due_reminders(db, now: datetime | None = None) -> list[Reminder]:
     current = now or datetime.now()
     today = current.date()
     current_hour = current.time().hour
@@ -84,6 +91,8 @@ def _trigger_due_reminders():
 
 
 def start_reminder_scheduler():
+    if _scheduler is None:
+        return
     if _scheduler.running:
         return
     _scheduler.add_job(
@@ -99,5 +108,7 @@ def start_reminder_scheduler():
 
 
 def stop_reminder_scheduler():
+    if _scheduler is None:
+        return
     if _scheduler.running:
         _scheduler.shutdown(wait=False)

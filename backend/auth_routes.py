@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from database import get_db
-from orm_models import User
-from schemas import AuthResponse, LoginRequest, SignupRequest, UserOut
-from security import create_access_token, hash_password, verify_password
+from .database import get_db
+from .orm_models import User
+from .schemas import AuthResponse, LoginRequest, SignupRequest, UserOut
+from .security import create_access_token, hash_password, verify_password
 
 
 router = APIRouter(tags=["auth"])
@@ -12,7 +14,7 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == payload.email).first()
+    existing_user = db.query(User).filter(User.email == payload.email.lower()).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

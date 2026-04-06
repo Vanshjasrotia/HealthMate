@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: healthmate-api
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: APP_NAME
+        value: HealthMate API
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: DEBUG
+        value: "false"
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: healthmate-db
+          property: connectionString
+    buildFilter:
+      paths:
+        - backend/**
+        - ml/**
+        - render.yaml
+
+databases:
+  - name: healthmate-db
+    databaseName: healthmate
+    user: healthmate
+    plan: free

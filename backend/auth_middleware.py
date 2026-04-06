@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from security import decode_access_token
+from .security import decode_access_token
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -17,5 +19,4 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     "email": payload.get("email"),
                 }
 
-        response = await call_next(request)
-        return response
+        return await call_next(request)

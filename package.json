@@ -1,13 +1,13 @@
 {
   "name": "healthmate",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start": "vite"
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "react": "^18.2.0",
